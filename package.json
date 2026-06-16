@@ -2,7 +2,7 @@
   "name": "cc-usage",
   "displayName": "Claude Code Multi-Account Usage",
   "description": "Status bar usage for Claude Code, per account — follows whichever account the active terminal's claude session uses",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "publisher": "hoseadev",
   "license": "MIT",
   "icon": "icon.png",

@@ -4,6 +4,7 @@ import { promisify } from 'util';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
+import * as crypto from 'crypto';
 
 const execFileAsync = promisify(execFile);
 const isWin = process.platform === 'win32';
@@ -25,10 +26,49 @@ interface UsageResult {
 
 // Cache `/usage` results per config dir so we don't spawn a heavyweight
 // `claude` process on every refresh / terminal switch. TTL = refreshInterval.
-const usageCache = new Map<string, { result: UsageResult; fetchedAt: number }>();
+// Stored on disk (not just in-memory) so multiple VSCode windows share one
+// cache per account — without this, N windows each query the same account once
+// per interval, multiplying the request rate by N.
+interface CacheEntry {
+  result: UsageResult;
+  fetchedAt: number;
+}
+
+function cacheDir(): string {
+  return path.join(os.tmpdir(), 'cc-usage-cache');
+}
+
+function cacheFileFor(configDir: string): string {
+  const hash = crypto.createHash('sha1').update(configDir).digest('hex').slice(0, 16);
+  return path.join(cacheDir(), `${hash}.json`);
+}
+
+function readDiskCache(configDir: string): CacheEntry | undefined {
+  try {
+    const obj = JSON.parse(fs.readFileSync(cacheFileFor(configDir), 'utf8'));
+    if (typeof obj?.fetchedAt === 'number' && obj?.result?.detail !== undefined) return obj as CacheEntry;
+  } catch {
+    // missing / corrupt cache — treat as a miss
+  }
+  return undefined;
+}
+
+function writeDiskCache(configDir: string, entry: CacheEntry): void {
+  try {
+    fs.mkdirSync(cacheDir(), { recursive: true });
+    const file = cacheFileFor(configDir);
+    // Write-then-rename so a concurrent reader in another window never sees a
+    // half-written file.
+    const tmp = `${file}.${process.pid}.tmp`;
+    fs.writeFileSync(tmp, JSON.stringify(entry), 'utf8');
+    fs.renameSync(tmp, file);
+  } catch {
+    // best-effort — a failed write just means the next refresh re-fetches
+  }
+}
 
 function getRefreshIntervalMs(): number {
-  const sec = vscode.workspace.getConfiguration('cc-usage').get<number>('refreshInterval', 30);
+  const sec = vscode.workspace.getConfiguration('cc-usage').get<number>('refreshInterval', 60);
   return Math.max(5, sec) * 1000; // guard against absurd values
 }
 
@@ -260,7 +300,7 @@ function parseUsageLabel(output: string): string {
 }
 
 async function fetchUsage(configDir: string): Promise<UsageResult> {
-  const cached = usageCache.get(configDir);
+  const cached = readDiskCache(configDir);
   if (cached && Date.now() - cached.fetchedAt < getRefreshIntervalMs()) {
     return cached.result;
   }
@@ -272,7 +312,7 @@ async function fetchUsage(configDir: string): Promise<UsageResult> {
   });
   const detail = stdout.trim();
   const result: UsageResult = { label: parseUsageLabel(detail), detail };
-  usageCache.set(configDir, { result, fetchedAt: Date.now() });
+  writeDiskCache(configDir, { result, fetchedAt: Date.now() });
   return result;
 }
 

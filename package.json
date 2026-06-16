@@ -2,16 +2,26 @@
   "name": "cc-usage",
   "displayName": "Claude Code Multi-Account Usage",
   "description": "Status bar usage for Claude Code, per account — follows whichever account the active terminal's claude session uses",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "publisher": "hoseadev",
   "license": "MIT",
   "icon": "icon.png",
   "engines": {
     "vscode": "^1.80.0"
   },
-  "categories": ["Other"],
-  "keywords": ["claude", "claude code", "usage", "token", "status bar"],
-  "activationEvents": ["onStartupFinished"],
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "claude",
+    "claude code",
+    "usage",
+    "token",
+    "status bar"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
@@ -29,20 +39,26 @@
       "properties": {
         "cc-usage.refreshInterval": {
           "type": "number",
-          "default": 30,
+          "default": 60,
           "description": "Refresh interval in seconds (also the per-account /usage cache TTL)"
         }
       }
     }
   },
   "scripts": {
+    "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "package": "vsce package"
+    "package": "vsce package --no-dependencies --allow-missing-repository",
+    "publish:vscode": "vsce publish --no-dependencies --allow-missing-repository",
+    "publish:ovsx": "ovsx publish --packagePath cc-usage-$npm_package_version.vsix",
+    "publish:all": "npm run package && npm run publish:vscode && npm run publish:ovsx"
   },
   "devDependencies": {
     "@types/node": "^25.9.2",
     "@types/vscode": "^1.80.0",
+    "@vscode/vsce": "^3.9.2",
+    "ovsx": "^1.0.1",
     "typescript": "^6.0.3"
   }
 }

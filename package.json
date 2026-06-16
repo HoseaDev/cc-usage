@@ -1,0 +1,48 @@
+{
+  "name": "cc-usage",
+  "displayName": "Claude Code Multi-Account Usage",
+  "description": "Status bar usage for Claude Code, per account — follows whichever account the active terminal's claude session uses",
+  "version": "0.2.0",
+  "publisher": "hoseadev",
+  "license": "MIT",
+  "icon": "icon.png",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": ["Other"],
+  "keywords": ["claude", "claude code", "usage", "token", "status bar"],
+  "activationEvents": ["onStartupFinished"],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "cc-usage.refresh",
+        "title": "Claude Code: Refresh Usage"
+      },
+      {
+        "command": "cc-usage.showDetail",
+        "title": "Claude Code: Show Usage Detail"
+      }
+    ],
+    "configuration": {
+      "title": "Claude Code Usage",
+      "properties": {
+        "cc-usage.refreshInterval": {
+          "type": "number",
+          "default": 30,
+          "description": "Refresh interval in seconds (also the per-account /usage cache TTL)"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "package": "vsce package"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.2",
+    "@types/vscode": "^1.80.0",
+    "typescript": "^6.0.3"
+  }
+}

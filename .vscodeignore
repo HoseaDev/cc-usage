@@ -1,0 +1,12 @@
+.vscode/**
+.claude/**
+cc-usage.png
+.claude-sessions/**
+memory/**
+src/**
+**/*.ts
+**/*.map
+tsconfig.json
+package-lock.json
+.gitignore
+.git/**
